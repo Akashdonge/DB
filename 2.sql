@@ -58,3 +58,53 @@ YZ',"Address":'davangere'})
 >db.warehouse1.find().pretty()
 >db.warehouse1.find({"P_ID":9462}).pretty()
 
+
+    
+create table part1(pno int,pname char(20),colour char(20),primary key(pno)); 
+create table copy_part1(pno int,pname char(20),colour char(20),primary key(pno)); 
+create table shipment (ShipmentID int, pno int, QuantityShipped int,primary 
+key(ShipmentID),foreign key(pno) references part1(pno)); 
+ 
+insert into part1 values(10,'nuts','black'); 
+insert into part1 values(20,'bolts','grey'); 
+insert into part1 values(30,'screw','green'); 
+ 
+insert into shipment values(1,10,100); 
+insert into shipment values (2,20,200); 
+insert into shipment values(3,30,300); 
+ 
+SET SERVEROUTPUT ON;
+
+DECLARE 
+    CURSOR curr IS 
+        SELECT * FROM part1;
+
+    CURSOR shipments_cursor IS 
+        SELECT shipmentid, pno, quantityshipped 
+        FROM shipment;
+
+    counter INT;
+    rows part1%ROWTYPE; 
+BEGIN 
+    -- Copy data from part1 to copy_part1
+    OPEN curr; 
+    LOOP 
+        FETCH curr INTO rows; 
+        EXIT WHEN curr%NOTFOUND; 
+        INSERT INTO copy_part1 VALUES(rows.pno, rows.pname, rows.colour); 
+    END LOOP; 
+    counter := curr%ROWCOUNT; 
+    CLOSE curr; 
+    DBMS_OUTPUT.PUT_LINE(counter || ' rows inserted into the table copy_part1'); 
+
+    -- Update the shipment quantities
+    FOR shipment IN shipments_cursor LOOP 
+        UPDATE shipment 
+        SET quantityshipped = quantityshipped * 1.05 
+        WHERE shipmentid = shipment.shipmentid; 
+    END LOOP; 
+
+    DBMS_OUTPUT.PUT_LINE('Update complete.'); 
+END; 
+/
+
